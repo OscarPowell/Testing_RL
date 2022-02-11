@@ -1,7 +1,7 @@
 import numpy as np
 import random as rndm
 
-#Single argu  ment to initialize for the type of algorithm. Either "QL" or "SARSA"
+#Single argument to initialize for the type of algorithm. Either "QL" or "SARSA"
 #If using Q-Learning, choice of epsilon is arbitrary but must be provided as an argument.
 class grid_4x4_ex():
     def __init__(self, env):
@@ -34,7 +34,7 @@ class grid_4x4_ex():
             done = False         #false until the terminal state is reached (S = 0)
             iteration = 1
 
-            #SARSA version uses epsilon greedy policy to update Q, Q-Learning uses the greedy policy
+            #SARSA version uses epsilon greedy policy to update Q and choose state, Q-Learning uses the greedy policy only to choose state.
             #Epsilon=0 is pure exploitation, 1 is pure exploration.
             #Both algorithms use an epsilon greedy policy to select the current action but differ in how Q is updated
             isExploit = True
@@ -156,20 +156,49 @@ class grid_env:
         self.S = np.random.randint(1,16)  #Generate random start state (1 to 15)
         return self.S
 
-algtype = "SARSA"    #Either QL or SARSA works
-alpha = 0.5       #step parameter
-gamma = 0.9       #discount factor
-epsilon = 0.05    #exploration parameter (0 for pure exploitation, 1 for pure exploration)
-n = 1600         #number of episodes 
-fr_gap = 0        #gap between iterations for false rewards provided (0 for no false rewards)
-n_repeats = 10
-print_flag = False
-n_test = 1600
+class rand_noise_adv_env:
+    def __init__(self, att_gap):
+        #set up reward so if an action would take it off the board, make it stay still and lose 10 reward, otherwise reward
+        # {F, , ,  },
+        # {_,_,_,  },
+        # { , ,_|, },
+        # { , , ,  }
+        self.R = np.array([[-10, -1, -1,-10], [-10, -1, -1, -1], [-10, -1, -1, -1], [-10,-10, -1, -1],
+                            [ -1, -1,-10,-10], [ -1, -1,-10, -1], [ -1, -1,-10, -1], [ -1,-10, -1, -1],
+                            [-10, -1, -1,-10], [-10, -1, -1, -1], [-10,-10,-10, -1], [ -1,-10, -1,-10],
+                            [ -1, -1,-10,-10], [ -1, -1,-10, -1], [-10, -1,-10, -1], [ -1,-10,-10, -1]])
+        self.S = np.random.randint(0,16)
+        self.att_gap = att_gap
+    
+    #takes input of action and returns new state according to board physics, alongside the reward of the current state
+    #opt_pol_mode as True forces a deterministic change_state() to help figure out the optimum policy matrix.
+    def step(self, A):
+        #Don't move if at the board edge. Otherwise 0 up, 1 right, 2 down, 3 left
+        doMove = rndm.randint(0,1) #50% chance of action actually changing state
+        Snew = self.S                   #Returned new state
+        if((Snew % 4 == 0 and A == 3) or (Snew < 4 and A == 0) or (Snew > 11 and A == 2) or (Snew % 4 == 3 and A == 1) or (doMove == 0)):
+            pass 
+        elif(A == 0):
+            Snew = Snew-4
+        elif(A == 1):
+            Snew = Snew+1
+        elif(A == 2):
+            Snew = Snew+4
+        elif(A == 3):
+            Snew = Snew-1
+        else:
+            print('change_state() broken at state {} and action {}'.format(Snew,A))
+        R = self.R[self.S,A]
+        self.S = Snew           #keep track of state
+        done = (Snew == 0)           #done if S is at state 0
+        #After keeping track of the actual state, it provides fake state data to persuade the agent algorithm to give a suboptimal action
+        if(self.counter % self.att_gap == 0):
+            Snew = rndm.randint(1,15)
+        self.counter += 1
+        return Snew, R, done  #return state for next step and current reward
 
-test_env = grid_4x4_ex(grid_env())
-print("Using SARSA:")
-result = test_env.repeat_train_test(algtype,alpha,gamma,epsilon,n,fr_gap,n_repeats,n_test,print_flag)
-
-algtype = "QL"
-print("Using QL:")
-result = test_env.repeat_train_test(algtype,alpha,gamma,epsilon,n,fr_gap,n_repeats,n_test,print_flag)
+    #Starts an episode within the environment and returns the state.
+    def reset(self):
+        self.S = rndm.randint(1,15)  #Generate random start state (1 to 15)
+        self.counter = 1                  #initializes a counter
+        return self.S
