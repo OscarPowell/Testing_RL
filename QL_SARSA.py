@@ -1,6 +1,16 @@
 import numpy as np
 import random as rndm
 
+#Base class with generic methods.
+# class target_ML_agent():
+#     def __init__(self, env):
+#         self.env = env
+    
+#     #Used for changing the environment after initializing
+#     def set_env(self, env):
+#         self.env = env
+
+
 #Single argument to initialize for the type of algorithm. Either "QL" or "SARSA"
 #If using Q-Learning, choice of epsilon is arbitrary but must be provided as an argument.
 class grid_4x4_ex():
@@ -89,7 +99,7 @@ class grid_4x4_ex():
             no_of_starts[S] += 1
             done = False     #False until the terminal state is reached (S = 0)
             iteration = 1
-            while not done and iteration < 20:
+            while not done and iteration < 40:
                 A = self.optimum_pi[S].astype(int) #use the Snew from the optimum policy matrix then find corresponding action from S to Snew
                 Snew, R, done = self.env.step(A) 
                 acc_R += R       
@@ -196,6 +206,62 @@ class rand_noise_adv_env:
             Snew = rndm.randint(1,15)
         self.counter += 1
         return Snew, R, done  #return state for next step and current reward
+
+    #Starts an episode within the environment and returns the state.
+    def reset(self):
+        self.S = rndm.randint(1,15)  #Generate random start state (1 to 15)
+        self.counter = 1                  #initializes a counter
+        return self.S
+
+#This agent is set up to choose the action with the lowest adjacent reward, each time it attacks.
+#Is formulated as a black box with no access to the Q function.
+class min_reward_agent_env:
+    def __init__(self, att_gap):
+        #set up reward so if an action would take it off the board, make it stay still and lose 10 reward, otherwise reward
+        # {F, , ,  },
+        # {_,_,_,  },
+        # { , ,_|, },
+        # { , , ,  }
+        self.R = np.array([[-10, -1, -1,-10], [-10, -1, -1, -1], [-10, -1, -1, -1], [-10,-10, -1, -1],
+                            [ -1, -1,-10,-10], [ -1, -1,-10, -1], [ -1, -1,-10, -1], [ -1,-10, -1, -1],
+                            [-10, -1, -1,-10], [-10, -1, -1, -1], [-10,-10,-10, -1], [ -1,-10, -1,-10],
+                            [ -1, -1,-10,-10], [ -1, -1,-10, -1], [-10, -1,-10, -1], [ -1,-10,-10, -1]])
+        self.S = np.random.randint(0,16)
+        self.att_gap = att_gap
+    
+    #takes input of action and returns new state according to board physics, alongside the reward of the current state
+    #opt_pol_mode as True forces a deterministic change_state() to help figure out the optimum policy matrix.
+    def step(self, A):
+        #Don't move if at the board edge. Otherwise 0 up, 1 right, 2 down, 3 left
+        doMove = rndm.randint(0,1) #50% chance of action actually changing state
+        R = self.R[self.S,A]
+
+        Snew = self.find_new_state(self.S, A, doMove)
+        self.S = Snew           #keep track of state
+        done = (Snew == 0)           #done if S is at state 0
+        #After keeping track of the actual state, it provides fake state data to persuade the agent algorithm to give a suboptimal action
+        if(self.counter % self.att_gap == 0):
+            A_min = np.argmin(self.R[self.S,:])
+            Snew = self.find_new_state(self.S, A_min, True) # note it chooses the first minimum value
+        self.counter += 1 
+        return Snew, R, done  #return state for next step and current reward
+
+    def find_new_state(self,S,A,doMove):
+        if((S % 4 == 0 and A == 3) or (S < 4 and A == 0) or (S > 11 and A == 2) or (S % 4 == 3 and A == 1) or (doMove == 0)):
+            Snew = S 
+        elif(A == 0):
+            Snew = S-4
+        elif(A == 1):
+            Snew = S+1
+        elif(A == 2):
+            Snew = S+4
+        elif(A == 3):
+            Snew = S-1
+        else:
+            Snew = S
+            print('change_state() broken at state {} and action {}'.format(S,A))
+        return Snew
+
 
     #Starts an episode within the environment and returns the state.
     def reset(self):
