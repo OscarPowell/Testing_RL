@@ -12,7 +12,7 @@ class target_cartpole_agent():
     def __init__(self, env):
         self.env = env
         # self.env = gym.envs.make("CartPole-v1") #use if env not working
-        print("Initialising cartpole training agent with action space: " + str(self.env.action_space.n))
+        print("Initialising cartpole training agent")
         self.np_array_win_size = np.array([0.25, 0.25, 0.01, 0.1]) #steps for each.
 
     #Used for changing the environment after initializing - can be used later to set up adversarial attack
@@ -74,6 +74,13 @@ class target_cartpole_agent():
 
                 if i % 2000 == 0:
                     self.env.render()
+                
+                if i == n:
+                    #write final Q Table to test it later
+                    self.Q = Q
+                    # Q_file = open('pattanaik_target_Q.p','wb')
+                    # pickle.dump(Q , Q_file)
+                    # Q_file.close()
 
                 if not done:
                     if isExploit or self.algtype == 'QL':
@@ -107,3 +114,17 @@ class target_cartpole_agent():
 
         self.env.close()
         return plot_rewards, Q
+
+    #Tests the policy, which is defined by the Q matrix' optimum values. Note train() has to have already have been called.
+    #n is the number of runs to test. The return value is the average reward per episode for the testing.
+    def test(self,n):
+        total_R = 0
+        for i in range(n):
+                S = self.get_discrete_state(self.env.reset()) #reset environment and get starting discrete state
+                done = False
+                while not done:
+                    Amax = np.argmax(self.Q[S])
+                    S, R, done, _ = self.env.step(Amax)   #Find out the new continuous state according to the action
+                    S = self.get_discrete_state(S)            #Find discrete version of state
+                    total_R += R
+        return total_R/n
