@@ -58,33 +58,33 @@ import matplotlib.pyplot as plt
 # plt.show()
 
 ########### TESTING rand_noise_adv_env successfully changes state during TRAINING ##########
-print("###TESTING rand_noise_adv_env successfully changes state during TRAINING ###")
+# print("###TESTING rand_noise_adv_env successfully changes state during TRAINING ###")
 
-print("Training target agent with adversarial man-in-the-middle:")
-algtype = "SARSA"    #Either QL or SARSA works
-alpha = 0.5       #step parameter
-gamma = 0.9       #discount factor
-epsilon = 0.05    #exploration parameter (0 for pure exploitation, 1 for pure exploration)
-n = 1600          #number of episodes 
-fr_gap = 0        #gap between iterations for false rewards provided (0 for no false rewards)
-print_flag = True
-n_test = 1600
+# print("Training target agent with adversarial man-in-the-middle:")
+# algtype = "SARSA"    #Either QL or SARSA works
+# alpha = 0.5       #step parameter
+# gamma = 0.9       #discount factor
+# epsilon = 0.05    #exploration parameter (0 for pure exploitation, 1 for pure exploration)
+# n = 1600          #number of episodes 
+# fr_gap = 0        #gap between iterations for false rewards provided (0 for no false rewards)
+# print_flag = True
+# n_test = 1600
 
-att_gap_range = np.arange(1,8)
-results = np.zeros((7,1))
-target_agent = algs.grid_4x4_ex(algs.grid_env())
-for att_gap in att_gap_range:
-    print("\nUsing attack with gap", att_gap)
-    target_agent.set_env(algs.rand_noise_adv_env(att_gap))
-    target_agent.train(algtype, alpha, gamma, epsilon, n, fr_gap, print_flag) # #First train the target agent while attacking it:
-    target_agent.set_env(algs.grid_env()) #Set back to the normal environment for testing
-    results[int(att_gap)-1] = np.average(target_agent.test_opt_policy(n_test, print_flag)) # See the average results of the training
+# att_gap_range = np.arange(1,8)
+# results = np.zeros((7,1))
+# target_agent = algs.grid_4x4_ex(algs.grid_env())
+# for att_gap in att_gap_range:
+#     print("\nUsing attack with gap", att_gap)
+#     target_agent.set_env(algs.rand_noise_adv_env(att_gap))
+#     target_agent.train(algtype, alpha, gamma, epsilon, n, fr_gap, print_flag) # #First train the target agent while attacking it:
+#     target_agent.set_env(algs.grid_env()) #Set back to the normal environment for testing
+#     results[int(att_gap)-1] = np.average(target_agent.test_opt_policy(n_test, print_flag)) # See the average results of the training
 
-plt.plot(att_gap_range,results)
-plt.title("Effect of Random Noise (State Data) Attack During Training on 4x4 Grid ")
-plt.xlabel("Iteration Gap Between Attacks")
-plt.ylabel("Average Accumulated Reward")
-plt.show()
+# plt.plot(att_gap_range,results)
+# plt.title("Effect of Random Noise (State Data) Attack During Training on 4x4 Grid ")
+# plt.xlabel("Iteration Gap Between Attacks")
+# plt.ylabel("Average Accumulated Reward")
+# plt.show()
 
 ########### TESTING min_reward_agent_env successfully changes state during TRAINING ##########
 # print("###TESTING min_reward_agent_env successfully changes state during TRAINING ###")
@@ -114,3 +114,4 @@ plt.show()
 # plt.xlabel("Iteration Gap Between Attacks")
 # plt.ylabel("Average Accumulated Reward")
 # plt.show()
+

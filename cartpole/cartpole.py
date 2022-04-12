@@ -97,7 +97,7 @@ class target_cartpole_agent():
                     epsilon = math.pow(epsilon_decay_value, i - 10000)
 
                     if i % 500 == 0:
-                        print("Epsilon: " + str(epsilon))            
+                        print("Epsilon: " + str(epsilon))       
 
             t_ep = time.time() - t0
             t_total += t_ep
@@ -115,9 +115,10 @@ class target_cartpole_agent():
         self.env.close()
         return plot_rewards, Q
 
-    #Tests the policy, which is defined by the Q matrix' optimum values. Note train() has to have already have been called.
+    #Tests the policy, which is defined by the Q matrix' optimum values. Note train() has to have already have been called. Essentially fully exploitative
     #n is the number of runs to test. The return value is the average reward per episode for the testing.
     def test(self,n):
+        print("Testing cart-pole target agent")
         total_R = 0
         for i in range(n):
                 S = self.get_discrete_state(self.env.reset()) #reset environment and get starting discrete state
